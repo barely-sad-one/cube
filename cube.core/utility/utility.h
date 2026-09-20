@@ -34,9 +34,9 @@ constexpr usize align_up(usize value, align_t alignment)
   return (value + (alignment - 1)) & ~(alignment - 1);
 }
 
-constexpr bool is_aligned(usize value, align_t alignemnt)
+constexpr bool is_aligned(usize value, align_t alignment)
 {
-  return (value > 0) && (value & (alignment - 1) == 0);
+  return alignment > 0 && (alignment & (alignment - 1)) == 0 && (value & (alignment - 1)) == 0;
 }
 
 template <typename F>

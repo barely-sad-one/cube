@@ -3,7 +3,7 @@
 namespace cube
 {
 
-template <typename T, usize N>
+template <typename T, usize N> requires (N > 0)
 struct Array
 {
   using type = T;
@@ -31,5 +31,8 @@ struct Array
   constexpr T* begin() const { return &data[0]; }
   constexpr T* end() const { return &data[N]; }
 };
+// static_assert(__is_trivially_destructible(Array<utility::TrivialComponent, 16>));
+// static_assert(__is_trivially_destructible(Array<utility::NonTrivialComponent, 16>) == false);
+// static_assert(__is_trivially_destructible(Array<f32, 0>));
 
 }
