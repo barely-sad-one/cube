@@ -1,4 +1,5 @@
 #include "assertions_win.cpp"
 #include "platform/platform_inc.cpp"
 #include "memory/memory_inc.cpp"
-#include "string/strings.cpp"
+#include "string/strings_inc.cpp"
+#include "platform/window_inc.cpp"

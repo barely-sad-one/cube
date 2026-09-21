@@ -1,9 +1,10 @@
-#include <windows.h>
-
-#include "entry.cpp"
-
-// entry point
 #if compiler_msvc
+
+#define UNICODE
+#define _UNICODE
+
+#include <windows.h>
+#include "entry.cpp"
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine, int nCmdShow)
 {
@@ -16,6 +17,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR lpCmdLine,
 }
 
 #else
+
+#include "entry.cpp"
 
 int main(int argc, char* argv[])
 {

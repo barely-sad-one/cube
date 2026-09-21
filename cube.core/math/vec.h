@@ -8,7 +8,7 @@ struct Vec2
 {
   union
   {
-    T v[2];
+    T data[2];
     T x, y;
     T u, v;
     T width, height;
@@ -27,7 +27,7 @@ struct Vec3
 {
   union
   {
-    T v[3];
+    T data[3];
     T x, y, z;
   };
 };

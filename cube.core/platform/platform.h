@@ -48,11 +48,12 @@ cube_api void* memory_copy(void *dest, const void *src, usize size);
 cube_api void* memory_move(void *dest, void *src, usize size);
 cube_api void* memory_set(void *dest, i32 value, usize size);
 cube_api void* memory_zero(void *dest, usize size);
+cube_api i32   memory_compare(const void *a, const void *b, usize size);
 
 template <typename T>
 T* memory_copy(T *dest, const T *src, usize count)
 {
-  return static_cast<T*>(memory_copy(static_cast<void*>(dest), static_cast<void*>(src), sizeof(T) * count));
+  return static_cast<T*>(memory_copy(static_cast<void*>(dest), static_cast<const void*>(src), sizeof(T) * count));
 }
 
 template <typename T>
@@ -71,6 +72,12 @@ template <typename T>
 T* memory_zero(T *dest, usize count)
 {
   return static_cast<T*>(memory_zero(static_cast<void*>(dest), sizeof(T) * count));
+}
+
+template <typename T>
+i32 memory_compare(const T *a, const T *b, usize count)
+{
+  return memory_compare(static_cast<const void*>(a), static_cast<const void*>(b), sizeof(T) * count);
 }
 
 }

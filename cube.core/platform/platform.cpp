@@ -30,4 +30,9 @@ void* memory_zero(void *dest, usize size)
   return memory_set(dest, 0, size);
 }
 
+i32 memory_compare(const void *a, const void *b, usize size)
+{
+  return memcmp(a, b, size);
+}
+
 }

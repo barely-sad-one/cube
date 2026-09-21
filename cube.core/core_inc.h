@@ -7,4 +7,6 @@
 #include "platform/platform_inc.h"
 #include "collections/array.h"
 #include "memory/memory_inc.h"
-#include "string/strings.h"
+#include "string/strings_inc.h"
+#include "math/vec.h"
+#include "platform/window_inc.h"

@@ -38,6 +38,11 @@ template <           typename T, typename F> struct Conditional<false, T, F> { u
 template <bool Cond, typename T, typename F>
 using conditional_t = typename Conditional<Cond, T, F>::type;
 
+template <bool Cond, typename T = void> struct EnableIf {};
+template <           typename T>        struct EnableIf<true, T> { using type = T; };
+template <bool Cond, typename T = void>
+using enable_if_t = typename EnableIf<Cond, T>::type;
+
 template <typename T> struct RemoveConst          { using type = T; };
 template <typename T> struct RemoveConst<const T> { using type = T; };
 template <typename T>
@@ -50,6 +55,17 @@ using remove_volatile_t = typename RemoveVolatile<T>::type;
 
 template <typename T>
 using remove_cv_t = remove_const_t<remove_volatile_t<T>>;
+
+template <typename T> struct RemoveReference      { using type = T; };
+template <typename T> struct RemoveReference<T&>  { using type = T; };
+template <typename T> struct RemoveReference<T&&> { using type = T; };
+template <typename T>
+using remove_ref_t = typename RemoveReference<T>::type;
+
+template <typename T> struct IsLValueRef     : false_type {};
+template <typename T> struct IsLValueRef<T&> : true_type {};
+template <typename T>
+inline constexpr bool is_lvalue_ref_v = IsLValueRef<T>::value;
 
 template <typename T, typename U>
 inline constexpr bool is_same_v = IsSameHelper<T, U>::value;
@@ -104,9 +120,28 @@ template <typename T>
 inline constexpr bool is_trivially_copyable_v = __is_trivially_copyable(T);
 
 template <typename T>
-concept trivial = is_trivially_copyable_v<remove_cv_t<T>> && is_trivially_destructible_v<remove_cv_t<T>>;
+concept Trivial = is_trivially_copyable_v<remove_cv_t<T>> && is_trivially_destructible_v<remove_cv_t<T>>;
 
 template <typename T>
-concept non_trivial = !(is_trivially_copyable_v<remove_cv_t<T>> && is_trivially_destructible_v<remove_cv_t<T>>);
+concept NonTrivial = !(is_trivially_copyable_v<remove_cv_t<T>> && is_trivially_destructible_v<remove_cv_t<T>>);
+
+template <typename T>
+constexpr remove_ref_t<T>&& move(T&& t)
+{
+  return static_cast<remove_ref_t<T>&&>(t);
+}
+
+template <typename T> 
+constexpr T&& forward(remove_ref_t<T>& t)
+{
+  return static_cast<T&&>(t);
+}
+
+template <typename T> 
+constexpr T&& forward(remove_ref_t<T>&& t)
+{
+  static_assert(!is_lvalue_ref_v<T>, "template argument substituting T is an lvalue reference type");
+  return static_cast<T&&>(t);
+}
 
 }

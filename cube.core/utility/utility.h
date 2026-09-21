@@ -48,13 +48,15 @@ struct ExitScope
   ~ExitScope() {f();}
 
   delete_copy_constructor(ExitScope);
-  delete_move_constructor(ExitScope);
+
+  ExitScope(ExitScope &&other) : f(utility::move(other.f)) {}
+  ExitScope& operator=(ExitScope &&) = delete;
 };
 
-template <typename F>
 struct ExitScopeHelper
 {
-  ExitScope<F> operator+ (F f) { return ExitScope<F>(f); }
+  template <typename F>
+  ExitScope<F> operator+ (F &&f) { return ExitScope<F>(utility::forward<F>(f)); }
 };
 
 }
@@ -62,4 +64,4 @@ struct ExitScopeHelper
 #define CONCAT_IMPL(x, y) x##y
 #define CONCAT(x, y) CONCAT_IMPL(x, y)
 
-#define defer const auto& concat(_defer_v_, __COUNTER__) = ExitScopeHelper() + [&]()
+#define defer const auto CONCAT(_defer_v_, __COUNTER__) = cube::utility::ExitScopeHelper() + [&]()

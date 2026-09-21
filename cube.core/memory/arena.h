@@ -88,7 +88,7 @@ struct cube_api Arena
     return reinterpret_cast<void*>(aligned);
   }
 
-  template <utility::trivial T, align_t alignment = align_default>
+  template <utility::Trivial T, align_t alignment = align_default>
   T* push(usize size)
   {
     return static_cast<T*>(push<alignment>(size));

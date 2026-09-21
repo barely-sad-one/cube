@@ -59,7 +59,7 @@ void* allocate(usize size)
   if (align < alignof(MemoryHeader)) align = alignof(MemoryHeader);
 
   usize total_size = size + sizeof(MemoryHeader) + align - 1;
-  void *raw = platform::allocate<align>(total_size);
+  void *raw = platform::allocate(total_size, alignment);
   if (!raw) return nullptr;
 
   usize base = reinterpret_cast<usize>(raw) + sizeof(MemoryHeader);
@@ -68,7 +68,7 @@ void* allocate(usize size)
   MemoryHeader *header = reinterpret_cast<MemoryHeader*>(aligned - sizeof(MemoryHeader));
   header->size = size;
   header->type = type;
-  header->offset = static_cast<u32>(aligned) - reinterpret_cast<usize>(raw); 
+  header->offset = static_cast<u32>(static_cast<usize>(aligned) - reinterpret_cast<usize>(raw)); 
 
   get_memory_system()->add(type, total_size);
 
@@ -76,7 +76,7 @@ void* allocate(usize size)
 
 #endif
 
-  return platform::allocate<alignment>(size);
+  return platform::allocate(size, alignment);
 }
 
 template <typename T, MemoryType type = MemoryType_Unknown, align_t alignment = align_default>

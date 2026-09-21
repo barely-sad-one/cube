@@ -85,33 +85,6 @@ void decommit(void *ptr, usize size)
   cube_assert_debug(res);
 }
 
-// bool Window::create(Vec2i pos, Vec2i dem, Vec2i min_dem, Vec2i max_dem)
-// {
-//   if (win_callbacks.on_create) return on_create(callbacks.user_data);
-//   return true;
-// }
-
-// void Window::destroy()
-// {
-// }
-
-// void Window::set_callbacks(WindowCallbacks *win_callbacks)
-// {
-//   callbacks = *win_callbacks;
-// }
-
-// void Window::map()
-// {
-// }
-
-// void Window::unmap()
-// {
-// }
-
-// bool Window::pump_messages()
-// {
-// }
-
 #endif // os_windows
 
 }
