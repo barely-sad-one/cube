@@ -43,10 +43,10 @@ cube_api Memory* get_memory_system();
 struct MemoryHeader
 {
   usize size;
+  usize total_size;
   MemoryType type;
-  u32 offset;
 };
-static_assert(sizeof(MemoryHeader) == 16);
+static_assert(sizeof(MemoryHeader) == 24); // 8 + 8 + 4 + 4(implicit struct padding) = 24 bytes
 
 cube_api MemoryHeader* get_memory_header(void *ptr);
 
@@ -58,25 +58,29 @@ void* allocate(usize size)
   usize align = alignment;
   if (align < alignof(MemoryHeader)) align = alignof(MemoryHeader);
 
-  usize total_size = size + sizeof(MemoryHeader) + align - 1;
+  usize total_size = sizeof(MemoryHeader) + sizeof(u32) + size + align - 1;
   void *raw = platform::allocate(total_size, alignment);
   if (!raw) return nullptr;
 
-  usize base = reinterpret_cast<usize>(raw) + sizeof(MemoryHeader);
-  usize aligned = utility::align_up(base, align);
+  usize raw_addr = reinterpret_cast<usize>(raw);
 
-  MemoryHeader *header = reinterpret_cast<MemoryHeader*>(aligned - sizeof(MemoryHeader));
+  MemoryHeader *header = reinterpret_cast<MemoryHeader*>(raw);
   header->size = size;
+  header->total_size = total_size;
   header->type = type;
-  header->offset = static_cast<u32>(static_cast<usize>(aligned) - reinterpret_cast<usize>(raw)); 
+
+  usize user_addr = utility::align_up(raw_addr + sizeof(MemoryHeader) + sizeof(u32), align);
+
+  u32 *offset_ptr = reinterpret_cast<u32*>(user_addr - sizeof(u32));
+  *offset_ptr = static_cast<u32>(user_addr - raw_addr);
 
   get_memory_system()->add(type, total_size);
 
-  return reinterpret_cast<void*>(aligned);
-
-#endif
+  return reinterpret_cast<void*>(user_addr);
+#else
 
   return platform::allocate(size, alignment);
+#endif
 }
 
 template <typename T, MemoryType type = MemoryType_Unknown, align_t alignment = align_default>
@@ -92,15 +96,41 @@ void* reallocate(void *ptr, usize new_size)
 #if cube_memory_track
   if (!ptr) return allocate<MemoryType_Unknown, alignment>(new_size);
 
-  MemoryHeader *header = get_memory_header(ptr);
-  usize old_size = header->size + header->offset;
+  u32 *offset_ptr = reinterpret_cast<u32*>(reinterpret_cast<usize>(ptr) - sizeof(u32));
+  usize old_raw_addr = reinterpret_cast<usize>(ptr) - *offset_ptr;
+  MemoryHeader *old_header = reinterpret_cast<MemoryHeader*>(old_raw_addr);
 
-  i64 diff = header->size - old_size;
-  if (diff > 0) get_memory_system()->add(header->type, static_cast<usize>(diff));
-  else get_memory_system()->sub(header->type, static_cast<usize>(-diff));
+  MemoryType tracking_type = old_header->type;
+  usize old_total_size = old_header->total_size;
+
+  usize align = alignment;
+  if (align < alignof(MemoryHeader)) align = alignof(MemoryHeader);
+  usize new_total_size = sizeof(MemoryHeader) + sizeof(u32) + new_size + align - 1;
+
+  void *new_raw = platform::reallocate(reinterpret_cast<void*>(old_raw_addr), new_total_size, align);
+  if (!new_raw) return nullptr;
+
+  usize new_raw_addr = reinterpret_cast<usize>(new_raw);
+
+  MemoryHeader *new_header = reinterpret_cast<MemoryHeader*>(new_raw);
+  new_header->size = new_size;
+  new_header->total_size = new_total_size;
+  new_header->type = tracking_type;
+
+  usize new_user_addr = utility::align_up(new_raw_addr + sizeof(MemoryHeader) + sizeof(u32), align);
+
+  u32 *new_offset_ptr = reinterpret_cast<u32*>(new_user_addr - sizeof(u32));
+  *new_offset_ptr = static_cast<u32>(new_user_addr - new_raw_addr);
+
+  get_memory_system()->sub(tracking_type, old_total_size);
+  get_memory_system()->add(tracking_type, new_total_size);
+
+  return reinterpret_cast<void*>(new_user_addr);
+
+#else
+  return platform::reallocate(ptr, new_size, alignment);
 
 #endif
-  return platform::reallocate(ptr, new_size, alignment);
 }
 
 template <typename T, align_t alignment = align_default>
@@ -111,11 +141,16 @@ T* reallocate(T *ptr, usize new_count)
 
 void deallocate(void *ptr)
 {
+  void *block = ptr;
 #if cube_memory_track
-  MemoryHeader *header = get_memory_header(ptr);
-  get_memory_system()->sub(header->type, header->size + header->offset);
+  u32 *offset_ptr = reinterpret_cast<u32*>(reinterpret_cast<usize>(ptr) - sizeof(u32));
+  usize raw_addr = reinterpret_cast<usize>(ptr) - *offset_ptr;
+  MemoryHeader *header = reinterpret_cast<MemoryHeader*>(raw_addr);
+  get_memory_system()->sub(header->type, header->total_size);
+
+  block = reinterpret_cast<void*>(raw_addr);
 #endif
-  platform::deallocate(ptr);
+  platform::deallocate(block);
 }
 
 template <typename T>

@@ -33,7 +33,13 @@ void memory_destroy()
 
 MemoryHeader* get_memory_header(void *ptr)
 {
-  return reinterpret_cast<MemoryHeader*>(reinterpret_cast<usize>(ptr) - sizeof(MemoryHeader));
+#if cube_memory_track
+  u32 *offset_ptr = reinterpret_cast<u32*>(reinterpret_cast<usize>(ptr) - sizeof(u32));
+  usize raw_addr = reinterpret_cast<usize>(ptr) - *offset_ptr;
+  return reinterpret_cast<MemoryHeader*>(raw_addr);
+#else
+  return nullptr
+#endif
 }
 
 void* reserve(usize size)
